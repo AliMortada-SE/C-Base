@@ -1,20 +1,27 @@
 #include "../include/cbase.h"
 #include <iostream>
+Node::~Node() {
+    for (auto c : children) delete c;
+    for (auto t : tables) delete t;
+}
 Node::Node(std::string n) : name(n) {
     fs::create_directories(n);
-    path = n;
+    this->name = n;
+    this->path = n;
     nodeMap = path + "/" + n + ".map";
     fs::create_directories(path);
     if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
 }
 
 Node::Node(std::string n, Node& parent) : name(n) {
-    path = parent.path + "/" + n;
-    nodeMap = parent.path + "/" + n + ".map";
+    this->name = n;
+    this->path = parent.path + "/" + n;
+    this->nodeMap = parent.path + "/" + n + ".map";
     fs::create_directories(path);
     if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
     parent.addChild(this);
 }
+
 void Node::addChild(Node* n)  { 
     children.push_back(n); 
 }
@@ -25,8 +32,6 @@ void Node::addTable(Table* t) {
 bool Node::load(){
     std::fstream file;
     std::string line;
-    std::string Key;
-    std::string Value;
     std::vector<std::string> Tables;
     std::vector<std::string> Nodes;
     file.open(this->nodeMap,std::ios::in);
@@ -40,20 +45,38 @@ bool Node::load(){
         }
     }
     file.close();
-    for (int x = 0; x < Nodes.size();x++){
-        Node n(Nodes[x],*this);
+    for (int x = 0; x < Nodes.size(); x++){
+        Node* n = new Node(Nodes[x], *this);
+        n->load();
     }
-
-    for (int x = 0; x < Tables.size();x++){
-        Table t(Tables[x],*this);
+    
+    for (int x = 0; x < Tables.size(); x++){
+        Table* t = new Table(Tables[x], *this);
     }
-
     return 1;
 }
 
+bool Table::load(){
+    std::fstream file;
+    std::string line;
+    std::string key;
+    size_t sep = 0;
+    int val = 0;
+    file.open(this->mapPath,std::ios::in);
+    if(!file.is_open())return 0;
+    while(std::getline(file,line)){
+        sep = line.find(':');
+        if (sep == std::string::npos) return 0;
+        key = line.substr(0, sep);
+        val = std::stoi(line.substr(sep + 1));
+        this->map[key] = val;
+    }
+    return 1;
+}
 Table::Table(std::string n, Node& parent) : name(n) {
-    path = parent.path + "/" + n + ".table";
-    mapPath = parent.path + "/" + n + ".map";
+    this->name = n;
+    this->path = parent.path + "/" + n + ".table";
+    this->mapPath = parent.path + "/" + n + ".map";
     if (!fs::exists(path)) std::ofstream(path).close();
     if (!fs::exists(mapPath)) std::ofstream(mapPath).close();
     parent.addTable(this);
@@ -95,7 +118,7 @@ int main(){
     Node school("school");
     school.load();
     std::cin.get();
-    std::cout<<school.tables.size();
+    std::cout<<school.tables[0]->name<<"\n";
     return 0;
     Table ClassA("ClassA",school);
     Item student {0,"ali","name:ali;age:21;city:baghdad;"};

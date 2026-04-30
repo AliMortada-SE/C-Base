@@ -57,7 +57,6 @@ std::string remove(std::string key, std::string& line){
     if(offset.first == -1 && offset.second == -1) return "";
     int start = offset.first;
     int end   = sizeOf(offset.second,line);
-    if("")
     line.erase(start,(offset.second - offset.first) + end + 1);
     return line;
 }

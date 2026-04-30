@@ -37,6 +37,7 @@ class Table {
     Item read(int id);
     bool edit(int ID, Item item);
     bool append(Item item);
+    bool load();
 };
 
 class Node {
@@ -46,6 +47,7 @@ class Node {
     std::string name;
     std::string path;
     std::string nodeMap;
+    ~Node();
     Node(std::string n);
     Node(std::string n, Node& parent);
     bool load();
