@@ -52,6 +52,7 @@ bool Node::load(){
     
     for (int x = 0; x < Tables.size(); x++){
         Table* t = new Table(Tables[x], *this);
+        t->load();
     }
     return 1;
 }
