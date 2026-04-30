@@ -5,9 +5,10 @@
 #include <unordered_map>
 #include <filesystem>
 #include <fstream>
+#include "corda.h"
 #include "filemanager.h"
+CORDA corda;
 namespace fs = std::filesystem;
-
 class Node;
 class Table;
 
@@ -25,12 +26,12 @@ public:
 };
 
 class Table {
+    public:
     std::string name;
-    std::string path;
     std::string mapPath;
     std::vector<Item> items;
+    std::string path;
     std::unordered_map<std::string, int> map;
-public:
     Table(std::string n, Node& parent);
     void insert(Item item);
     Item read(int id);
@@ -39,17 +40,20 @@ public:
 };
 
 class Node {
-    std::string name;
+    public:
     std::vector<Table*> tables;
     std::vector<Node*> children;
-public:
+    std::string name;
     std::string path;
+    std::string nodeMap;
     Node(std::string n);
     Node(std::string n, Node& parent);
+    bool load();
     void addChild(Node* n);
     void addTable(Table* t);
 };
 
 class CBase {
+    bool mount(std::string& path);
 
 };
