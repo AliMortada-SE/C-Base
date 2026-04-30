@@ -49,6 +49,9 @@ std::string get(std::string key,std::string line){
     }
     return value;
 }
+std::pair<std::string,std::string> load(std::string line){
+    
+}
 std::string add(std::string key,std::string value){
     return key + ':' + value + ';';
 }
