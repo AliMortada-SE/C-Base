@@ -1,4 +1,4 @@
-#pragma once
+ٰٰ#pragma once
 #ifndef CORDA_H
 #define CORDA_H
 #include <string>
@@ -59,6 +59,22 @@ std::string remove(std::string key, std::string& line){
     int end   = sizeOf(offset.second,line);
     line.erase(start,(offset.second - offset.first) + end + 1);
     return line;
+}
+
+std::vector<std::string> keys(std::string line){
+    std::vector<std::string> out;
+    std::string key;
+    size_t x = 0;
+    while(x < line.size()){
+        if(line[x] == ':'){
+            out.push_back(key);
+            key.clear();
+            while(x < line.size() && line[x] != ';') x++;
+        } 
+        else key += line[x];
+        x++;
+    }
+    return out;
 }
 
 int locateIndex(std::string key,std::string type, std::string line){

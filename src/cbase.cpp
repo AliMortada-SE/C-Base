@@ -57,20 +57,18 @@ bool Node::load(){
     return 1;
 }
 
-bool Table::load(){
-    std::fstream file;
-    std::string line;
-    std::string key;
-    size_t sep = 0;
-    int val = 0;
-    file.open(this->mapPath,std::ios::in);
-    if(!file.is_open()) return 0;
-    while(std::getline(file,line)){
-        sep = line.find(':');
-        if (sep == std::string::npos) return 0;
-        key = line.substr(0, sep);
-        val = std::stoi(line.substr(sep + 1));
-        this->map[key] = val;
+bool Table::LoadMap(){
+    std::vector<uint8_t> data;
+    std::vector<std::string> keys;
+    keys.push_back("");
+    for(int x=0;x<roomMap.nodes.size();x++){
+        uint64_t size = roomMap.NodeSize(x);
+        data.resize(size);
+        this->roomMap.ReadNode(x,(char*)data.data(),size);
+        std::string str(data.begin(), data.end());
+        keys = corda.keys(str);
+        map[keys[0]] = std::stoi(corda.get(keys[0],str));
+        data.resize(0);
     }
     return 1;
 }
@@ -78,38 +76,60 @@ Table::Table(std::string n, Node& parent) : name(n) {
     this->name = n;
     this->path = parent.path + "/" + n + ".table";
     this->mapPath = parent.path + "/" + n + ".map";
-    ROOM main(path);
-    ROOM map(mapPath);
-    if (!fs::exists(path)) std::ofstream(path).close();
-    if (!fs::exists(mapPath)) std::ofstream(mapPath).close();
+    this->room.SetFileName(this->path);
+    this->room.open();
+    this->roomMap.SetFileName(this->mapPath);
+    this->roomMap.open();
     parent.addTable(this);
 }
 
-void Table::insert(Item item) {
-    item.ID = items.size();
-    map[item.name] = item.ID;
-    items.push_back(item);
+Item Table::read(std::string ItemName) {
+    Item item;
+    std::vector<uint8_t> data;
+    int ID = map.at(ItemName);
+    size_t size = room.NodeSize(ID);
+    data.resize(size);
+    this->room.ReadNode(ID,(char*)data.data(),size);
+    std::string str(data.begin(), data.end());
+    item.ID = ID;
+    item.name = ItemName;
+    item.data = str;
+    item.SortCells();
+    return item;
 }
 
-Item Table::read(int id) {
-    if (id >= (int)items.size()) {
-        return {-1, "", ""};
+
+bool Table::append(Item& item, int size) {
+    int itemSize = item.data.size();
+    if(size == 0){
+        size = item.data.size() + 1;
     }
-    return items[id];
-}
-
-bool Table::edit(int ID, Item item) {
-    if (ID >= (int)items.size()) return false;
-    items[ID] = item;
+    if(itemSize > size){
+        std::cout<<"Data Size Bigger than Item Size, Failed to Add.\n";
+        return 0;
+    }
+    item.ID = this->room.AddNode(size);
+    std::string MapData = corda.add(item.name,std::to_string(item.ID));
+    this->roomMap.AddNode(MapData.size() + 1);
+    this->roomMap.WriteNode(item.ID,MapData.data(),MapData.size());
+    this->room.WriteNode(item.ID,item.data.data(),item.data.size());
+    this->items.push_back(item);
     return true;
 }
 
-bool Table::append(Item item) {
-    Append(item.data, path);
-    Append(item.name + ":" + std::to_string(item.ID) + ";", mapPath);
-    return true;
+bool Item::SortCells(){
+    if(this->data.size() == 0){
+        std::cout<<"There are no data.\n";
+        return 0;
+    }
+    std::vector<std::string> keys = corda.keys(data);
+    for(int x = 0< keys.size();x++){
+       std::pair<int,int> p = corda.find(keys[x], data);
+       p.second -= 1;
+       this->CellsMap[keys[x]] = p;
+    }
+    return 1;
 }
-
 
 
 // Each Node  is a Folder

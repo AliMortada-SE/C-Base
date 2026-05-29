@@ -24,6 +24,8 @@ public:
     int ID;
     std::string name;
     std::string data;
+    std::unordered_map<std::string,std::pair<int,int>> CellsMap;
+    bool SortCells();
 };
 
 class Table {
@@ -33,13 +35,13 @@ class Table {
     std::vector<Item> items;
     std::string path;
     std::unordered_map<std::string, int> map;
-    std::vector<ROOM> rooms;
+    ROOM room;
+    ROOM roomMap;
     Table(std::string n, Node& parent);
-    void insert(Item item);
     Item read(int id);
     bool edit(int ID, Item item);
-    bool append(Item item);
-    bool load();
+    bool append(Item item, int size = 0);
+    bool LoadMap();
 };
 
 class Node {
