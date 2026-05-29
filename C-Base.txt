@@ -1,0 +1,19 @@
+C-Base
+	System
+		System wake
+			Mount working folder
+			load map
+				Tables
+				Children Nodes
+	Architecture
+		Node (Folder)
+			Node Path (Node in Node to make Sub-folder)
+			Node school("school")
+			Table (file)
+				Field students("students",school)
+				Item (string)
+					Subfield ali("name","age","city")
+					Cell (sub-string)
+						name:ali
+		mount point
+			mount the main folder to system

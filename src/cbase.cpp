@@ -1,4 +1,4 @@
-#include "../include/cbase.h"
+#include "cbase.h"
 #include <iostream>
 Node::~Node() {
     for (auto c : children) delete c;
@@ -23,10 +23,10 @@ Node::Node(std::string n, Node& parent) : name(n) {
 }
 
 void Node::addChild(Node* n)  { 
-    children.push_back(n); 
+    this->children.push_back(n); 
 }
 void Node::addTable(Table* t) { 
-    tables.push_back(t); 
+    this->tables.push_back(t); 
 }
 
 bool Node::load(){
@@ -39,7 +39,7 @@ bool Node::load(){
     while(std::getline(file,line)){
         if(corda.isExist("TABLE",line)){
             Tables.push_back(corda.get("TABLE",line));
-        }    
+        }  
         else{
             Nodes.push_back(corda.get("NODE",line));
         }
@@ -64,7 +64,7 @@ bool Table::load(){
     size_t sep = 0;
     int val = 0;
     file.open(this->mapPath,std::ios::in);
-    if(!file.is_open())return 0;
+    if(!file.is_open()) return 0;
     while(std::getline(file,line)){
         sep = line.find(':');
         if (sep == std::string::npos) return 0;
@@ -78,6 +78,8 @@ Table::Table(std::string n, Node& parent) : name(n) {
     this->name = n;
     this->path = parent.path + "/" + n + ".table";
     this->mapPath = parent.path + "/" + n + ".map";
+    ROOM main(path);
+    ROOM map(mapPath);
     if (!fs::exists(path)) std::ofstream(path).close();
     if (!fs::exists(mapPath)) std::ofstream(mapPath).close();
     parent.addTable(this);

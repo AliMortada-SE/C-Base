@@ -1,9 +1,9 @@
-all:gcc run
+all:g++
 
-gcc:
-	cp src/cbase.cpp build && cd build && g++ -std=c++20 cbase.cpp -o ../test
-
-run:
-	./test
+cpp = src/*.cpp ../ProjectP/src/room.cpp ../ProjectP/src/utils.cpp
+header = -Iinclude -I../ProjectP/include
+flag = -std=c++20
+g++:
+	g++ $(flag) $(header) $(cpp)  -o build/test -lpthread
 remove:
 	rm  school/*

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <filesystem>
 #include <fstream>
+#include "room.h"
 #include "corda.h"
 #include "filemanager.h"
 CORDA corda;
@@ -32,6 +33,7 @@ class Table {
     std::vector<Item> items;
     std::string path;
     std::unordered_map<std::string, int> map;
+    std::vector<ROOM> rooms;
     Table(std::string n, Node& parent);
     void insert(Item item);
     Item read(int id);
