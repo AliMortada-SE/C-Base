@@ -7,8 +7,7 @@
 #include <fstream>
 #include "room.h"
 #include "corda.h"
-#include "filemanager.h"
-CORDA corda;
+inline CORDA corda;
 namespace fs = std::filesystem;
 class Node;
 class Table;
