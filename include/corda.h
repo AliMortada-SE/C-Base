@@ -1,4 +1,3 @@
-ٰٰ#pragma once
 #ifndef CORDA_H
 #define CORDA_H
 #include <string>

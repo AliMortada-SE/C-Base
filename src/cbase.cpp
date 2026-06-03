@@ -52,7 +52,7 @@ bool Node::load(){
     
     for (int x = 0; x < Tables.size(); x++){
         Table* t = new Table(Tables[x], *this);
-        t->load();
+        t->LoadMap();
     }
     return 1;
 }
@@ -61,8 +61,9 @@ bool Table::LoadMap(){
     std::vector<uint8_t> data;
     std::vector<std::string> keys;
     keys.push_back("");
-    for(int x=0;x<roomMap.nodes.size();x++){
-        uint64_t size = roomMap.NodeSize(x);
+    this->roomMap.open();
+    for(int x=0;x<this->roomMap.nodes.size();x++){
+        uint64_t size = this->roomMap.NodeSize(x);
         data.resize(size);
         this->roomMap.ReadNode(x,(char*)data.data(),size);
         std::string str(data.begin(), data.end());
@@ -123,7 +124,7 @@ bool Item::SortCells(){
         return 0;
     }
     std::vector<std::string> keys = corda.keys(data);
-    for(int x = 0< keys.size();x++){
+    for(int x = 0 ; x < keys.size();x++){
        std::pair<int,int> p = corda.find(keys[x], data);
        p.second -= 1;
        this->CellsMap[keys[x]] = p;
@@ -138,15 +139,15 @@ bool Item::SortCells(){
 // Each Cell  is a Key/Value
 
 int main(){
-    Node school("school");
-    school.load();
-    std::cin.get();
-    std::cout<<school.tables[0]->name<<"\n";
-    return 0;
-    Table ClassA("ClassA",school);
-    Item student {0,"ali","name:ali;age:21;city:baghdad;"};
-    Item temp = ClassA.read(ClassA.map["ali"]);
-    std::cout << temp.data;
-    ClassA.append(student);
-    return 0;
+    //Node school("school");
+    //school.load();
+    //std::cin.get();
+    //std::cout<<school.tables[0]->name<<"\n";
+    //return 0;
+    //Table ClassA("ClassA",school);
+    //Item student {0,"ali","name:ali;age:21;city:baghdad;"};
+    //Item temp = ClassA.read(ClassA.map["ali"]);
+    //std::cout << temp.data;
+    //ClassA.append(student);
+    //return 0;
 }

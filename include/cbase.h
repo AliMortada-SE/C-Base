@@ -38,9 +38,9 @@ class Table {
     ROOM room;
     ROOM roomMap;
     Table(std::string n, Node& parent);
-    Item read(int id);
+    Item read(std::string ItemName);
     bool edit(int ID, Item item);
-    bool append(Item item, int size = 0);
+    bool append(Item& item, int size = 0);
     bool LoadMap();
 };
 
