@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
+#include <unordered_set>
 #include <filesystem>
 #include <fstream>
 #include "room.h"
@@ -50,6 +51,8 @@ class Node {
     std::string name;
     std::string path;
     std::string nodeMap;
+    std::unordered_set<std::string> TablesMap;
+    std::unordered_set<std::string> NodesMap;
     ~Node();
     Node(std::string n);
     Node(std::string n, Node& parent);

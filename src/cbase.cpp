@@ -22,21 +22,15 @@ Node::Node(std::string n, Node& parent) : name(n) {
     parent.addChild(this);
 }
 
-void Node::addChild(Node* n)  { 
-    this->children.push_back(n); 
-}
-void Node::addTable(Table* t) { 
-    this->tables.push_back(t); 
-}
 
 bool Node::load(){
     std::fstream file;
     std::string line;
     std::vector<std::string> Tables;
     std::vector<std::string> Nodes;
-    file.open(this->nodeMap,std::ios::in);
+    file.open(this->nodeMap,std::ios::in);      // 1 open Node Map
     if(!file.is_open()) return 0;
-    while(std::getline(file,line)){
+    while(std::getline(file,line)){             // 2 Load Tables and Children Nodes Name
         if(corda.isExist("TABLE",line)){
             Tables.push_back(corda.get("TABLE",line));
         }  
@@ -47,33 +41,52 @@ bool Node::load(){
     file.close();
     for (int x = 0; x < Nodes.size(); x++){
         Node* n = new Node(Nodes[x], *this);
-        n->load();
+        n->load();                              // 3 Load Nodes
     }
-    
     for (int x = 0; x < Tables.size(); x++){
-        Table* t = new Table(Tables[x], *this);
-        t->LoadMap();
+        this->TablesMap.insert(Tables[x]);        // 4 Map  Tables
+        Table* t = new Table(Tables[x], *this); 
+        t->LoadMap();                           // 5 Load Items Map
+        std::cin.get();
+        this->tables.push_back(t);             // 6 Load Table to Ram
     }
     return 1;
 }
+void Node::addTable(Table* t) { 
+    if(!this->TablesMap.count(t->name)){
+        std::cout<<"Table Creted.\n";
+        std::ofstream(nodeMap, std::ios::app) << corda.add("TABLE", t->name) << "\n";
+        this->tables.push_back(t);                  
+    }
+}
+
+void Node::addChild(Node* n)  { 
+    std::ofstream(nodeMap, std::ios::app) << corda.add("NODE", n->name) << "\n";
+    this->children.push_back(n); 
+}
+
 
 bool Table::LoadMap(){
     std::vector<uint8_t> data;
     std::vector<std::string> keys;
     keys.push_back("");
-    this->roomMap.open();
     for(int x=0;x<this->roomMap.nodes.size();x++){
         uint64_t size = this->roomMap.NodeSize(x);
         data.resize(size);
         this->roomMap.ReadNode(x,(char*)data.data(),size);
         std::string str(data.begin(), data.end());
         keys = corda.keys(str);
-        map[keys[0]] = std::stoi(corda.get(keys[0],str));
+        std::cout<<"Key:" <<keys[0]<<"\n";
+        std::cout<<"Map:" <<corda.get(keys[0],str)<<"\n";
+        this->map[keys[0]] = std::stoi(corda.get(keys[0],str));
         data.resize(0);
     }
     return 1;
 }
 Table::Table(std::string n, Node& parent) : name(n) {
+    if(!parent.TablesMap.count(n)){
+        parent.addTable(this);
+    }
     this->name = n;
     this->path = parent.path + "/" + n + ".table";
     this->mapPath = parent.path + "/" + n + ".map";
@@ -81,13 +94,12 @@ Table::Table(std::string n, Node& parent) : name(n) {
     this->room.open();
     this->roomMap.SetFileName(this->mapPath);
     this->roomMap.open();
-    parent.addTable(this);
 }
 
 Item Table::read(std::string ItemName) {
     Item item;
     std::vector<uint8_t> data;
-    int ID = map.at(ItemName);
+    int ID = this->map.at(ItemName);
     size_t size = room.NodeSize(ID);
     data.resize(size);
     this->room.ReadNode(ID,(char*)data.data(),size);
@@ -139,15 +151,15 @@ bool Item::SortCells(){
 // Each Cell  is a Key/Value
 
 int main(){
-    //Node school("school");
-    //school.load();
-    //std::cin.get();
-    //std::cout<<school.tables[0]->name<<"\n";
-    //return 0;
-    //Table ClassA("ClassA",school);
-    //Item student {0,"ali","name:ali;age:21;city:baghdad;"};
-    //Item temp = ClassA.read(ClassA.map["ali"]);
-    //std::cout << temp.data;
-    //ClassA.append(student);
-    //return 0;
+    Node school("school");
+    school.load();
+    Table ClassA("ClassA",school);
+    std::cout<<"Size of Tables -> "<< school.tables.size();
+    Item student {0,"ali","name:ali;age:21;city:baghdad;"};
+    ClassA.append(student);
+    std::cin.get();
+    Item temp = ClassA.read("ali");
+    std::cout << temp.data;
+    return 0;
 }
+
