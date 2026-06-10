@@ -107,6 +107,7 @@ Item Table::read(std::string ItemName) {
     item.ID = ID;
     item.name = ItemName;
     item.data = str;
+    this->map[item.name] =ID;
     item.SortCells();
     return item;
 }
@@ -119,6 +120,10 @@ bool Table::append(Item& item, int size) {
     }
     if(itemSize > size){
         std::cout<<"Data Size Bigger than Item Size, Failed to Add.\n";
+        return 0;
+    }
+    if(this->map.count(item.name)){
+        std::cout<<"Item already exists.\n";
         return 0;
     }
     item.ID = this->room.AddNode(size);
@@ -153,12 +158,14 @@ bool Item::SortCells(){
 int main(){
     Node school("school");
     school.load();
-    Table ClassA("ClassA",school);
-    std::cout<<"Size of Tables -> "<< school.tables.size();
+    Table* ClassA = school.tables.empty()
+    ? new Table("ClassA", school)
+    : school.tables[0];
     Item student {0,"ali","name:ali;age:21;city:baghdad;"};
-    ClassA.append(student);
+    ClassA->append(student);
+    std::cout<<"Size of Tables -> "<< school.tables.size();
     std::cin.get();
-    Item temp = ClassA.read("ali");
+    Item temp = ClassA->read("ali");
     std::cout << temp.data;
     return 0;
 }
