@@ -12,7 +12,6 @@ Node::Node(std::string n) : name(n) {
     fs::create_directories(path);
     if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
 }
-
 Node::Node(std::string n, Node& parent) : name(n) {
     this->name = n;
     this->path = parent.path + "/" + n;
@@ -21,8 +20,6 @@ Node::Node(std::string n, Node& parent) : name(n) {
     if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
     parent.addChild(this);
 }
-
-
 bool Node::load(){
     std::fstream file;
     std::string line;
@@ -47,7 +44,6 @@ bool Node::load(){
         this->TablesMap.insert(Tables[x]);        // 4 Map  Tables
         Table* t = new Table(Tables[x], *this); 
         t->LoadMap();                           // 5 Load Items Map
-        std::cin.get();
         this->tables.push_back(t);             // 6 Load Table to Ram
     }
     return 1;
@@ -127,6 +123,7 @@ bool Table::append(Item& item, int size) {
         return 0;
     }
     item.ID = this->room.AddNode(size);
+    this->map[item.name] = item.ID;
     std::string MapData = corda.add(item.name,std::to_string(item.ID));
     this->roomMap.AddNode(MapData.size() + 1);
     this->roomMap.WriteNode(item.ID,MapData.data(),MapData.size());
@@ -161,12 +158,12 @@ int main(){
     Table* ClassA = school.tables.empty()
     ? new Table("ClassA", school)
     : school.tables[0];
+    Table ClassA("ClassA", school);
     Item student {0,"ali","name:ali;age:21;city:baghdad;"};
     ClassA->append(student);
-    std::cout<<"Size of Tables -> "<< school.tables.size();
-    std::cin.get();
+    std::cout<<"Size of Tables -> "<< school.tables.size()<<"\n";
     Item temp = ClassA->read("ali");
-    std::cout << temp.data;
+    std::cout << temp.data<<"\n";
     return 0;
 }
 

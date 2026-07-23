@@ -47,7 +47,7 @@ class Table {
 class Node {
     public:
     std::vector<Table*> tables;
-    std::vector<Node*> children;
+    std::vector<Node* > children;
     std::string name;
     std::string path;
     std::string nodeMap;
