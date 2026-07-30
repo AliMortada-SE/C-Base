@@ -15,7 +15,7 @@ Node::Node(std::string n) : name(n) {
 Node::Node(std::string n, Node& parent) : name(n) {
     this->name = n;
     this->path = parent.path + "/" + n;
-    this->nodeMap = parent.path + "/" + n + ".map";
+    this->nodeMap = this->path + "/" + n + ".map";
     fs::create_directories(path);
     if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
     parent.addChild(this);
@@ -31,7 +31,7 @@ bool Node::load(){
         if(corda.isExist("TABLE",line)){
             Tables.push_back(corda.get("TABLE",line));
         }  
-        else{
+        else if (corda.isExist("NODE",line)){
             Nodes.push_back(corda.get("NODE",line));
         }
     }
@@ -102,11 +102,14 @@ Table::Table(std::string n, Node& parent) : name(n) {
 Item Table::read(std::string ItemName) {
     Item item;
     std::vector<uint8_t> data;
-    int ID = this->map.at(ItemName);
+    auto it = this->map.find(ItemName);
+    if(it == this->map.end()) return {-1, "", ""};
+    int ID = it.second;
     size_t size = room.NodeSize(ID);
     data.resize(size);
     this->room.ReadNode(ID,(char*)data.data(),size);
     std::string str(data.begin(), data.end());
+    str.resize(strnlen(str.c_str(), str.size()));
     item.ID = ID;
     item.name = ItemName;
     item.data = str;
@@ -130,6 +133,7 @@ bool Table::append(Item& item, int size) {
         return 0;
     }
     item.ID = this->room.AddNode(size);
+    if(item.ID < 0) return 0;
     this->map[item.name] = item.ID;
     std::string MapData = corda.add(item.name,std::to_string(item.ID));
     int mapID = this->roomMap.AddNode(MapData.size() + 1);
