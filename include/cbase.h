@@ -62,6 +62,11 @@ class Node {
 };
 
 class CBase {
+    public:
+    std::vector<std::string> Definer(std::string& path);
+    std::vector<std::string> Linker(std::string& path);
     bool mount(std::string& path);
+    private:
+    std::string& path="";
 
 };

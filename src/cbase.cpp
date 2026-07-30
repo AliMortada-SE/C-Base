@@ -157,6 +157,92 @@ bool Item::SortCells(){
     return 1;
 }
 
+std::vector<std::string> Definer(std::string& path){
+    std::string defineFile = "define.cbase";
+    std::string line;
+    if(!path.empty()){
+        defineFile = path + "/" + defineFile;
+    }
+    file.open(defineFile,std::ios::in);
+    if(!file.is_open()){
+        std::cout<<"Failed to Open define file.\n";
+        return 0;
+    }
+    std::fstream file;
+    std::string key;
+    std::string value;
+    std::vector<std::string> definer;
+    std::vector<std::string> Keys;
+    while(std::getline(file,line)){
+        Keys = corda.keys(line);
+        key = Keys[0];
+        value = corda.get(key);
+        if(value == "") {
+            Definer.pop_back();
+            value = "";
+            key = "";
+            Keys.clear();
+            continue;
+        }
+        Definer.push_back(key);
+    }
+    file.close();
+    return definer;
+
+}
+bool CBase::mount(std::string& path){
+    // Path is the main entry.
+    std::string defineFile = "define.cbase";
+    std::string linkFile = "link.cbase";
+    std::string line;
+    if(!path.empty()){
+        defineFile = path + "/" + defineFile;
+        linkFile   = path + "/" + linkFile;
+    }
+    file.open(defineFile,std::ios::in);
+    if(!file.is_open()){
+        std::cout<<"Failed to Open define file.\n";
+        return 0;
+    }
+    std::fstream file;
+    std::string key;
+    std::string value;
+    std::vector<std::string> Definer;
+    std::vector<std::string> Linker;
+    std::vector<std::string> NODES;
+    std::vector<std::string> TABLES;
+    std::vector<std::string> Keys;
+    while(std::getline(file,line)){
+        Keys = corda.keys(line);
+        key = Keys[0];
+        Definer.push_back(key);
+        value = corda.get(key);
+        if(value == "") {
+            Definer.pop_back();
+            value = "";
+            key = "";
+            Keys.clear();
+            continue;
+        }
+        if(key == "Node"){
+            NODES.push_back(key);
+        }
+        else if(key == "Table"){
+            TABLES.push_back(Key);
+        }
+    }
+    file.close();
+    file.open()
+    for(int x = 0; x < Definer.size(); x++){
+        if(Definer[x] == "Node"){
+            NODES.push_back();
+
+        }
+        else if(Definer[x] == "Table"){
+            TABLES.push_back(Key);
+        }
+    }
+}
 
 // Each Node  is a Folder
 // Each Table is a File
