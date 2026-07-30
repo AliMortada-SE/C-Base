@@ -51,13 +51,17 @@ bool Node::load(){
 void Node::addTable(Table* t) { 
     if(!this->TablesMap.count(t->name)){
         std::cout<<"Table Creted.\n";
+        TablesMap.insert(t->name);
         std::ofstream(nodeMap, std::ios::app) << corda.add("TABLE", t->name) << "\n";
         this->tables.push_back(t);                  
     }
 }
 
 void Node::addChild(Node* n)  { 
-    std::ofstream(nodeMap, std::ios::app) << corda.add("NODE", n->name) << "\n";
+    if(!NodesMap.count(n->name)){
+        NodesMap.insert(n->name);
+        std::ofstream(nodeMap, std::ios::app) << corda.add("NODE", n->name) << "\n";
+    }
     this->children.push_back(n); 
 }
 
@@ -68,15 +72,18 @@ bool Table::LoadMap(){
     keys.push_back("");
     for(int x=0;x<this->roomMap.nodes.size();x++){
         uint64_t size = this->roomMap.NodeSize(x);
-        data.resize(size);
+        if(size == 0) continue;                            // ADDED
+        data.assign(size, 0);                              // CHANGED (was data.resize(size))
         this->roomMap.ReadNode(x,(char*)data.data(),size);
         std::string str(data.begin(), data.end());
+        str.resize(strnlen(str.c_str(), str.size()));      // ADDED
         keys = corda.keys(str);
-        std::cout<<"Key:" <<keys[0]<<"\n";
-        std::cout<<"Map:" <<corda.get(keys[0],str)<<"\n";
-        this->map[keys[0]] = std::stoi(corda.get(keys[0],str));
-        data.resize(0);
+        if(keys.empty() || keys[0].empty()) continue;      // ADDED
+        std::string v = corda.get(keys[0], str);           // ADDED (was inline in stoi)
+        if(v.empty()) continue;                            // ADDED
+        this->map[keys[0]] = std::stoi(v);
     }
+    // data.resize(0) removed — assign() overwrites anyway
     return 1;
 }
 Table::Table(std::string n, Node& parent) : name(n) {
@@ -125,8 +132,8 @@ bool Table::append(Item& item, int size) {
     item.ID = this->room.AddNode(size);
     this->map[item.name] = item.ID;
     std::string MapData = corda.add(item.name,std::to_string(item.ID));
-    this->roomMap.AddNode(MapData.size() + 1);
-    this->roomMap.WriteNode(item.ID,MapData.data(),MapData.size());
+    int mapID = this->roomMap.AddNode(MapData.size() + 1);
+    this->roomMap.WriteNode(mapID,MapData.data(),MapData.size());
     this->room.WriteNode(item.ID,item.data.data(),item.data.size());
     this->items.push_back(item);
     return true;
@@ -158,7 +165,6 @@ int main(){
     Table* ClassA = school.tables.empty()
     ? new Table("ClassA", school)
     : school.tables[0];
-    Table ClassA("ClassA", school);
     Item student {0,"ali","name:ali;age:21;city:baghdad;"};
     ClassA->append(student);
     std::cout<<"Size of Tables -> "<< school.tables.size()<<"\n";
