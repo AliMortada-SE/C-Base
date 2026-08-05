@@ -5,20 +5,18 @@ Node::~Node() {
     for (auto t : tables) delete t;
 }
 Node::Node(std::string n) : name(n) {
-    fs::create_directories(n);
     this->name = n;
     this->path = n;
-    nodeMap = path + "/" + n + ".map";
-    fs::create_directories(path);
-    if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
 }
-Node::Node(std::string n, Node& parent) : name(n) {
-    this->name = n;
-    this->path = parent.path + "/" + n;
-    this->nodeMap = this->path + "/" + n + ".map";
-    fs::create_directories(path);
-    if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
+void Node::setParent(Node& parent){
+    this->parent = &parent;
     parent.addChild(this);
+    this->path = parent.path + "/" + this->path;
+}
+void Node::initDir(){
+    fs::create_directories(path);
+    this->nodeMap = this->path + "/" + this->name + ".map";
+    if(!fs::exists(nodeMap)) std::ofstream(nodeMap).close();
 }
 bool Node::load(){
     std::fstream file;
@@ -37,12 +35,16 @@ bool Node::load(){
     }
     file.close();
     for (int x = 0; x < Nodes.size(); x++){
-        Node* n = new Node(Nodes[x], *this);
+        Node* n = new Node(Nodes[x]);
+        n->setParent(*this);
+        n->initDir();
         n->load();                              // 3 Load Nodes
     }
     for (int x = 0; x < Tables.size(); x++){
         this->TablesMap.insert(Tables[x]);        // 4 Map  Tables
-        Table* t = new Table(Tables[x], *this); 
+        Table* t = new Table(Tables[x]);
+        t->setParent(*this);
+        t->initDir(); 
         t->LoadMap();                           // 5 Load Items Map
         this->tables.push_back(t);             // 6 Load Table to Ram
     }
@@ -64,8 +66,6 @@ void Node::addChild(Node* n)  {
     }
     this->children.push_back(n); 
 }
-
-
 bool Table::LoadMap(){
     std::vector<uint8_t> data;
     std::vector<std::string> keys;
@@ -86,25 +86,30 @@ bool Table::LoadMap(){
     // data.resize(0) removed — assign() overwrites anyway
     return 1;
 }
-Table::Table(std::string n, Node& parent) : name(n) {
-    if(!parent.TablesMap.count(n)){
+Table::Table(std::string n) : name(n) {
+    this->name = n;
+}
+void Table::setParent(Node& parent){
+    if(!parent.TablesMap.count(this->name)){
         parent.addTable(this);
     }
-    this->name = n;
-    this->path = parent.path + "/" + n + ".table";
-    this->mapPath = parent.path + "/" + n + ".map";
+    this->parent = &parent;
+}
+void Table::initDir(){
+    if(!parent) { std::cout << "No parent set.\n"; return; }
+    this->path = parent->path + "/" + this->parent->name + ".table";
+    this->mapPath = parent->path + "/" + this->parent->name + ".map";
     this->room.SetFileName(this->path);
     this->room.open();
     this->roomMap.SetFileName(this->mapPath);
     this->roomMap.open();
 }
-
 Item Table::read(std::string ItemName) {
     Item item;
     std::vector<uint8_t> data;
     auto it = this->map.find(ItemName);
     if(it == this->map.end()) return {-1, "", ""};
-    int ID = it.second;
+    int ID = it->second;
     size_t size = room.NodeSize(ID);
     data.resize(size);
     this->room.ReadNode(ID,(char*)data.data(),size);
@@ -157,91 +162,86 @@ bool Item::SortCells(){
     return 1;
 }
 
-std::vector<std::string> Definer(std::string& path){
+std::optional<std::unordered_map<std::string,std::string>> CBase::Definer(){
     std::string defineFile = "define.cbase";
     std::string line;
-    if(!path.empty()){
-        defineFile = path + "/" + defineFile;
+    std::fstream file;
+    if(!this->path.empty()){
+        defineFile = this->path + "/" + defineFile;
     }
     file.open(defineFile,std::ios::in);
     if(!file.is_open()){
         std::cout<<"Failed to Open define file.\n";
-        return 0;
+        return std::nullopt;
     }
-    std::fstream file;
     std::string key;
     std::string value;
-    std::vector<std::string> definer;
+    std::unordered_map<std::string,std::string> definer;
     std::vector<std::string> Keys;
     while(std::getline(file,line)){
-        Keys = corda.keys(line);
-        key = Keys[0];
-        value = corda.get(key);
-        if(value == "") {
-            Definer.pop_back();
-            value = "";
-            key = "";
-            Keys.clear();
-            continue;
-        }
-        Definer.push_back(key);
+        key = corda.key(line);
+        value = corda.get(key,line);
+        definer[value] = key;
     }
     file.close();
     return definer;
 
 }
-bool CBase::mount(std::string& path){
-    // Path is the main entry.
-    std::string defineFile = "define.cbase";
+std::optional<std::unordered_map<std::string,std::string>> CBase::Linker(std::unordered_map<std::string,std::string>& definer){
     std::string linkFile = "link.cbase";
+    std::fstream file;
     std::string line;
-    if(!path.empty()){
-        defineFile = path + "/" + defineFile;
-        linkFile   = path + "/" + linkFile;
+    std::string data;
+    std::string key;
+
+    std::vector<std::string> childs;
+    std::vector<std::string> parents;
+    if(!this->path.empty()){
+        linkFile   = this->path + "/" + linkFile;
     }
-    file.open(defineFile,std::ios::in);
+    file.open(linkFile,std::ios::in);
     if(!file.is_open()){
         std::cout<<"Failed to Open define file.\n";
-        return 0;
+        return std::nullopt;
     }
+    int x = 0;
+    while(std::getline(file,line)){
+        childs.push_back(corda.key(line));
+        parents.push_back(corda.get(childs[x],line));
+        line.clear();
+        x++;
+    }
+    x = 0;
+    while(x<childs.size()){
+        if(definer[childs[x]] == "Node"){
+            Node* parent = new Node(childs[x]);
+        }
+
+    }
+    return std::nullopt;
+}
+bool CBase::mount(std::string& path){
+    // Path is the main entry.
     std::fstream file;
+    std::string line;
     std::string key;
     std::string value;
-    std::vector<std::string> Definer;
-    std::vector<std::string> Linker;
+    auto definer = this->Definer();
     std::vector<std::string> NODES;
     std::vector<std::string> TABLES;
     std::vector<std::string> Keys;
-    while(std::getline(file,line)){
-        Keys = corda.keys(line);
-        key = Keys[0];
-        Definer.push_back(key);
-        value = corda.get(key);
-        if(value == "") {
-            Definer.pop_back();
-            value = "";
-            key = "";
-            Keys.clear();
-            continue;
-        }
-        if(key == "Node"){
+    std::vector<std::string> Chain;
+    if(!definer) { std::cout << "No data.\n"; return 0; }
+    for(auto& [key, value] : *definer){
+        if (key == "Node"){
             NODES.push_back(key);
         }
         else if(key == "Table"){
-            TABLES.push_back(Key);
+            TABLES.push_back(key); 
         }
     }
-    file.close();
-    file.open()
-    for(int x = 0; x < Definer.size(); x++){
-        if(Definer[x] == "Node"){
-            NODES.push_back();
-
-        }
-        else if(Definer[x] == "Table"){
-            TABLES.push_back(Key);
-        }
-    }
+    int x = 0;
+    return 1;
 }
 
 // Each Node  is a Folder
@@ -250,16 +250,16 @@ bool CBase::mount(std::string& path){
 // Each Cell  is a Key/Value
 
 int main(){
-    Node school("school");
-    school.load();
-    Table* ClassA = school.tables.empty()
-    ? new Table("ClassA", school)
-    : school.tables[0];
-    Item student {0,"ali","name:ali;age:21;city:baghdad;"};
-    ClassA->append(student);
-    std::cout<<"Size of Tables -> "<< school.tables.size()<<"\n";
-    Item temp = ClassA->read("ali");
-    std::cout << temp.data<<"\n";
+    //Node school("school");
+    //school.load();
+    //Table* ClassA = school.tables.empty()
+    //? new Table("ClassA", school)
+    //: school.tables[0];
+    //Item student {0,"ali","name:ali;age:21;city:baghdad;"};
+    //ClassA->append(student);
+    //std::cout<<"Size of Tables -> "<< school.tables.size()<<"\n";
+    //Item temp = ClassA->read("ali");
+    //std::cout << temp.data<<"\n";
     return 0;
 }
 

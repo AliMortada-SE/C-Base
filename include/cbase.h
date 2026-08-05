@@ -6,8 +6,14 @@
 #include <unordered_set>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include "room.h"
 #include "corda.h"
+
+
+#define Create x_0_x201CC
+
+
 inline CORDA corda;
 namespace fs = std::filesystem;
 class Node;
@@ -37,8 +43,11 @@ class Table {
     std::unordered_map<std::string, int> map;
     ROOM room;
     ROOM roomMap;
-    Table(std::string n, Node& parent);
+    Node* parent = nullptr;
+    Table(std::string n);
     Item read(std::string ItemName);
+    void setParent(Node& parent);
+    void initDir();
     bool edit(int ID, Item item);
     bool append(Item& item, int size = 0);
     bool LoadMap();
@@ -51,11 +60,14 @@ class Node {
     std::string name;
     std::string path;
     std::string nodeMap;
+    Node* parent = nullptr;
     std::unordered_set<std::string> TablesMap;
     std::unordered_set<std::string> NodesMap;
+
     ~Node();
     Node(std::string n);
-    Node(std::string n, Node& parent);
+    void setParent(Node& parent);
+    void initDir();
     bool load();
     void addChild(Node* n);
     void addTable(Table* t);
@@ -63,10 +75,10 @@ class Node {
 
 class CBase {
     public:
-    std::vector<std::string> Definer(std::string& path);
-    std::vector<std::string> Linker(std::string& path);
+    std::optional<std::unordered_map<std::string,std::string>>  Definer();
+    std::optional<std::unordered_map<std::string,std::string>>  Linker(std::unordered_map<std::string,std::string>& definer);
     bool mount(std::string& path);
     private:
-    std::string& path="";
+    std::string path = "";
 
 };

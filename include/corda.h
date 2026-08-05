@@ -75,6 +75,15 @@ std::vector<std::string> keys(std::string line){
     }
     return out;
 }
+std::string key(std::string line){
+    std::string key;
+    size_t x = 0;
+    while(x < line.size() && line[x] != ':'){
+        key += line[x];
+        x++;
+    }
+    return key;   
+}
 
 int locateIndex(std::string key,std::string type, std::string line){
     std::string Key = get(type,line);
